@@ -10,12 +10,13 @@ class Feature:
         self.angle = angle
 
 
-# methods that create
+# TO normalize the descriptor; take the root squared sum and divide each descriptor[i]
 def normalize(descriptor):
     sum = np.sqrt(np.sum(np.square(descriptor)))
     for x in range(len(descriptor)):
         descriptor[x] = descriptor[x] / sum
     return descriptor
+
 
 def createfeatures(keypoints, height, width, img):
     print("Creating Features...")
@@ -27,7 +28,7 @@ def createfeatures(keypoints, height, width, img):
             dx, dy = np.gradient(feature)
             dx = cv2.GaussianBlur(dx, (5, 5), 0, 0)
             dy = cv2.GaussianBlur(dy, (5, 5), 0, 0)
-            angle = findpeak(hist(dx, dy, 36, 0), 36)  # finds dominant orientation, (can create multiple features
+            angle = findpeak(hist(dx, dy, 36, 0), 36)  # finds dominant orientation, (can create multiple features)
             descript = featuredescript(dx, dy, angle)  # finds descriptor for feature
             feature = Feature([x, y], descript, angle)  # creates feature object( keypoint + descriptor + angle)
             features.append(feature)
@@ -75,25 +76,23 @@ def findpeak(histogram, size):
 # Used to find dominant orientation/ key descriptor
 # Creates histogram given the images dx,dy, size= number of bins, dom = dominent orientation/ if previously calculated
 def hist(dx, dy, size, dom):
-
+    bins = (360/size)
     histogram = np.zeros(size, dtype=np.float32)  # create histogram
     angles = np.arctan2(dy, dx)
     magnitude = np.sqrt(np.square(dy) + np.square(dx))
     angles = np.degrees(angles)
 
-    # deals with negative angles and calculates new angle given dominent orientation
+    # Deals with negative angles and calculates new angle given dominent orientation
     for angle in angles:
         for x in range(len(angle)):
-            angle[x] = angle[x] - dom
+            #angle[x] = angle[x] - dom
             if angle[x] < 0:
                 angle[x] = 360 + angle[x]
 
-    # place the magnitude at the proper index
+    # Place the magnitude at the proper index
     for i in range(len(angles)):
         for j in range(len(angles)):
-            index = int(np.floor((angles[i, j]) / (360 / size)))
-            if index > 8:
-                index = 0
+            index = int((np.floor((angles[i, j]) / bins)) % size)
             histogram[index] += magnitude[i, j]  # number of degrees in each histogram 360/size
 
     return histogram
